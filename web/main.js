@@ -53,6 +53,13 @@ colorPicker.addEventListener("input", (e) => {
     updateLight(colorPicker.value);
 });
 
+const tellESP = (rgbObj) => {
+    let url = `/setColor?r=${rgbObj.r}&g=${rgbObj.g}&b=${rgbObj.b}`;
+    let xhr = new XMLHttpRequest();
+    xhr.open("GET", url, true);
+    xhr.send();
+}
+
 // no api until we've received an access token
 let api = null;
 
@@ -65,6 +72,8 @@ let propertyID = process.eng.PROPID;
 let waiting = false;
 // to store the last color the web has used to avoid constantly reupdating the same value
 let lastWebColor = "";
+// flaw for when we're checking for a color update;
+let checking = false;
 
 // get color from iot cloud
 const getColor = async () => {
@@ -81,18 +90,25 @@ const getColor = async () => {
         let lastCloudColor = "rgb(" + val + ")";
         userColor = new THREE.Color(lastCloudColor);
         let rgbArray = val.split(",");
-        colorPicker.value = toHEX(rgbArray[0], rgbArray[1], rgbArray[2]);
+        let rgbObject = {
+            r: rgbArray[0],
+            g: rgbArray[1],
+            b: rgbArray[2]
+        }
+        colorPicker.value = toHEX(rgbObject.r, rgbObject.g, rgbObject.b);
         // start the scene if we haven't started yet
         if (!threeStarted) {
             initThree();
             threeStarted = true;
             lastWebColor = val;
         } else if (val != lastWebColor) {
-            // if the scene is going, update scene elements with color
+            // if the scene is running and there's a new color, update scene elements with color
             pointLight.color = userColor;
             ambientLight.color = userColor;
             cylinder.material.color = userColor;
             lastWebColor = val;
+            // we also want to tell the ESP that there is a new color
+            tellESP(rgbObject);
         }
     }, error => { console.log(error) });
 }
@@ -207,10 +223,7 @@ let updateLight = (color) => {
     updateColor(rgbString);
 
     // tell ESP that we've update the color
-    let url = `/setColor?r=${rgb.r}&g=${rgb.g}&b=${rgb.b}`;
-    let xhr = new XMLHttpRequest();
-    xhr.open("GET", url, true);
-    xhr.send();
+    tellESP(rgb);
 }
 
 // keep the date up to date on an interval
@@ -232,6 +245,7 @@ let updateDate = setInterval(() => {
 // sync the color on an interval ... 10s is a slight delay, but it's better than getting hit with a rate limit
 let syncCloudColor = setInterval(() => {
     if (!waiting && threeStarted) {
+        checking = true;
         getColor();
     }
 }, 10000);
