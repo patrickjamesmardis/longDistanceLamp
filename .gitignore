@@ -1,2 +1,6 @@
 *.fzz
 espSecret.h
+node_modules
+build
+npm-debug.log
+.env
