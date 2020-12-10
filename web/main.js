@@ -66,7 +66,7 @@ let api = null;
 // iot variables
 let deviceID = process.env.DEVICEID;
 let thingID = process.env.THINGID;
-let propertyID = process.eng.PROPID;
+let propertyID = process.env.PROPID;
 
 // flag for when we're waiting on an iot update
 let waiting = false;
