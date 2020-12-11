@@ -4,7 +4,7 @@ const THREE = require("three");
 const MTLLoader = require("three-obj-mtl-loader").MTLLoader;
 const OBJLoader = require("three-obj-mtl-loader").OBJLoader;
 
-// get access token for iot cloud api
+// get access token for iot cloud api - https://www.npmjs.com/package/@arduino/arduino-iot-client
 const getToken = async () => {
     let options = {
         method: "POST",
@@ -26,12 +26,12 @@ const getToken = async () => {
     }
 }
 
-// flag fore when three scene is started
+// flag for when three scene is started
 let threeStarted = false;
 // var to store user's current color
 let userColor;
 
-// convert rgb to hex
+// convert rgb to hex - based on https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
 let componentToHex = (component) => {
     let hex = parseInt(component).toString(16);
     return hex.length == 1 ? "0" + hex : hex;
@@ -40,12 +40,12 @@ let toHEX = (r, g, b) => {
     return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 }
 
-// vars for three js elements
+// vars for global three js elements
 let scene, pointLight, ambientLight, camera, renderer, cylinder;
 
 // listen to the color picker and update on input
 const colorPicker = document.getElementById("colorPicker");
-colorPicker.addEventListener("input", (e) => {
+colorPicker.addEventListener("input", () => {
     userColor = new THREE.Color(colorPicker.value);
     pointLight.color = userColor;
     ambientLight.color = userColor;
@@ -53,6 +53,7 @@ colorPicker.addEventListener("input", (e) => {
     updateLight(colorPicker.value);
 });
 
+// to send get requst with color to esp - https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest
 const tellESP = (rgbObj) => {
     let url = `/setColor?r=${rgbObj.r}&g=${rgbObj.g}&b=${rgbObj.b}`;
     let xhr = new XMLHttpRequest();
@@ -72,8 +73,6 @@ let propertyID = process.env.PROPID;
 let waiting = false;
 // to store the last color the web has used to avoid constantly reupdating the same value
 let lastWebColor = "";
-// flaw for when we're checking for a color update;
-let checking = false;
 
 // get color from iot cloud
 const getColor = async () => {
@@ -87,8 +86,10 @@ const getColor = async () => {
     // get our property's value, format, and update web page colors
     api.propertiesV2Show(thingID, propertyID).then(data => {
         let val = data.last_value;
+        // three color can be "rgb(r, g, b)"
         let lastCloudColor = "rgb(" + val + ")";
         userColor = new THREE.Color(lastCloudColor);
+        // html color picker needs hex
         let rgbArray = val.split(",");
         let rgbObject = {
             r: rgbArray[0],
@@ -107,7 +108,7 @@ const getColor = async () => {
             ambientLight.color = userColor;
             cylinder.material.color = userColor;
             lastWebColor = val;
-            // we also want to tell the ESP that there is a new color
+            // we also want to tell the esp that there is a new color
             tellESP(rgbObject);
         }
     }, error => { console.log(error) });
@@ -130,7 +131,7 @@ const updateColor = async (thisColor) => {
     });
 }
 
-// three js scene and elements ... wrapped in function to avoid starting when we don't have a color yet
+// three js scene and elements ... wrapped in function to avoid starting when we don't have a color yet - http://threejs.org/docs/
 let initThree = () => {
     scene = new THREE.Scene();
 
@@ -154,17 +155,20 @@ let initThree = () => {
     renderer.setClearColor(0x777777, 1);
     document.getElementById("threeScene").appendChild(renderer.domElement);
 
+    // lamp shade cylinder
     const geometry = new THREE.CylinderGeometry(1.2, 1.2, 3.5, 32, 4, false);
     const material = new THREE.MeshBasicMaterial({ color: userColor, transparent: true, opacity: 0.7, });
     cylinder = new THREE.Mesh(geometry, material);
     scene.add(cylinder);
 
+    // background plane to catch the ambient light
     const bgGeometry = new THREE.PlaneGeometry(100, 100);
     const bgMaterial = new THREE.MeshPhongMaterial({ color: 0x777777 });
     const bg = new THREE.Mesh(bgGeometry, bgMaterial);
     bg.position.z = -10;
     scene.add(bg);
 
+    // lamp base obj and mtl files
     let base;
     const loader = new OBJLoader();
     const mLoader = new MTLLoader();
@@ -181,6 +185,7 @@ let initThree = () => {
         });
     }, undefined, error => { console.log(error) });
 
+    // animate rotation on a loop
     let animate = () => {
         if (base) {
             base.rotation.y += 0.005;
@@ -191,17 +196,7 @@ let initThree = () => {
     animate();
 }
 
-window.addEventListener("resize", () => {
-    if (threeStarted) {
-        w = window.innerWidth;
-        h = window.innerHeight;
-        camera.aspect = w / h;
-        camera.updateProjectionMatrix();
-        renderer.setSize(w, h);
-    }
-});
-
-// convert hex to rgb
+// convert hex to rgb - https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
 let toRGB = (hex) => {
     return {
         r: parseInt(hex.substring(1, 3), 16),
@@ -210,6 +205,7 @@ let toRGB = (hex) => {
     }
 }
 
+// send a color to esp and arduino iot cloud
 let updateLight = (color) => {
     // prep the color var for iot cloud update
     let rgb = toRGB(color);
@@ -218,12 +214,17 @@ let updateLight = (color) => {
 
     // start waiting flag until update is resolved
     waiting = true;
-    // don't overwrite it with the old color if we're about to resync
-    clearInterval(syncCloudColor);
-    updateColor(rgbString);
-
-    // tell ESP that we've update the color
+    // tell esp that we've updated the color
     tellESP(rgb);
+    // stop interval until done
+    clearInterval(syncCloudColor);
+    updateColor(rgbString).then(() => {
+        syncCloudColor = setInterval(() => {
+            if (!waiting && threeStarted) {
+                getColor();
+            }
+        }, 10000);
+    });
 }
 
 // keep the date up to date on an interval
@@ -245,7 +246,17 @@ let updateDate = setInterval(() => {
 // sync the color on an interval ... 10s is a slight delay, but it's better than getting hit with a rate limit
 let syncCloudColor = setInterval(() => {
     if (!waiting && threeStarted) {
-        checking = true;
         getColor();
     }
 }, 10000);
+
+// adjust size and camera on resize
+window.addEventListener("resize", () => {
+    if (threeStarted) {
+        w = window.innerWidth;
+        h = window.innerHeight;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+    }
+});
