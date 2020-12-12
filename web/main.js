@@ -1,8 +1,9 @@
 const IotApi = require("@arduino/arduino-iot-client");
 const rp = require("request-promise");
 const THREE = require("three");
-const MTLLoader = require("three-obj-mtl-loader").MTLLoader;
-const OBJLoader = require("three-obj-mtl-loader").OBJLoader;
+const loaders = requre("three-obj-mtl-loader");
+const MTLLoader = loaders.MTLLoader;
+const OBJLoader = loaders.OBJLoader;
 
 // get access token for iot cloud api - https://www.npmjs.com/package/@arduino/arduino-iot-client
 const getToken = async () => {
@@ -31,7 +32,7 @@ let threeStarted = false;
 // var to store user's current color
 let userColor;
 
-// convert rgb to hex - based on https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
+// convert rgb to hex - https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
 let componentToHex = (component) => {
     let hex = parseInt(component).toString(16);
     return hex.length == 1 ? "0" + hex : hex;
@@ -209,7 +210,6 @@ let toRGB = (hex) => {
 let updateLight = (color) => {
     // prep the color var for iot cloud update
     let rgb = toRGB(color);
-    console.log(rgb);
     rgbString = rgb.r + "," + rgb.g + "," + rgb.b;
 
     // start waiting flag until update is resolved
