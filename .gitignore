@@ -5,3 +5,5 @@ build
 npm-debug.log
 .env
 secrets.txt
+.mp4
+.mov
