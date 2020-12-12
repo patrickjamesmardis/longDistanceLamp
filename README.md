@@ -102,7 +102,7 @@ When the browser sends a request to set the color, ```onColorChange()``` is call
 
 ### ```loop()``` | [final-esp.ino](final-esp/final-esp.ino)
 
-The ```loop()``` function uses the IoT cloud's update method to update the cloud variable. This is supposed to work to both read and write the value; however we were only seeing it work as a read of the cloud's value, as we saw an update when changing it on the IoT Dashboard, but we didn't see an update on the dashboard when updating it locally. Implementing their npm package and controlling the read and write processes with two separate functions, [```getColor()```]() and [```updateColor()```](), in JS worked for keeping the variable in sync regardless of where it is (re)defined.
+The ```loop()``` function uses the IoT cloud's update method to update the cloud variable. This is supposed to work to both read and write the value; however we were only seeing it work as a read of the cloud's value, as we saw an update when changing it on the IoT Dashboard, but we didn't see an update on the dashboard when updating it locally. Implementing their npm package and controlling the read and write processes with two separate functions, [```getColor()```](#getcolor--mainjs) and [```updateColor()```](), in JS worked for keeping the variable in sync regardless of where it is (re)defined.
 
 The ESP's complete .ino file can be found [here](final-esp/final-esp.ino)
 
