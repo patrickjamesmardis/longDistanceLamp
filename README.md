@@ -466,3 +466,11 @@ The main.js file ends with a resize event listener to adjust the camera and rend
         }
     });
 ```
+
+## main.js > bundle.js
+
+Now that main.js() is finished, I use [browserify](https://www.npmjs.com/package/browserify) to bundle the npm packages.
+
+```fish
+    browserify main.js > bundle.js
+```
