@@ -1,5 +1,9 @@
 # Long-Distance Lamp
 
+[![Long Distance Lamp Video Poster](documentationAssets/videoPoster.png)](https://vimeo.com/490253318)
+
+![Parts Diagram](documentationAssets/partsDiagram.png)
+
 This project is a solution that provides long-distance couples with a communication tool outside of our standard text or voice-based communications. Two lamps use an [ESP8266 WiFi Module](https://www.sparkfun.com/products/17146) connected to [Arudino's IoT Cloud](https://www.arduino.cc/en/IoT/HomePage), storing a color variable formatted as a string: 
 ```cpp
     String color = R + "," + G + "," + B;
@@ -102,7 +106,7 @@ When the browser sends a request to set the color, ```onColorChange()``` is call
 
 ### ```loop()``` | [final-esp.ino](final-esp/final-esp.ino)
 
-The ```loop()``` function uses the IoT cloud's update method to update the cloud variable. This is supposed to work to both read and write the value; however we were only seeing it work as a read of the cloud's value, as we saw an update when changing it on the IoT Dashboard, but we didn't see an update on the dashboard when updating it locally. Implementing their npm package and controlling the read and write processes with two separate functions, [```getColor()```](#getcolor--mainjs) and [```updateColor()```](), in JS worked for keeping the variable in sync regardless of where it is (re)defined.
+The ```loop()``` function uses the IoT cloud's update method to update the cloud variable. This is supposed to work to both read and write the value; however we were only seeing it work as a read of the cloud's value, as we saw an update when changing it on the IoT Dashboard, but we didn't see an update on the dashboard when updating it locally. Implementing their npm package and controlling the read and write processes with two separate functions, [```getColor()```](#getcolor--mainjs) and [```updateColor()```](#updatecolor--mainjs), in JS worked for keeping the variable in sync regardless of where it is (re)defined.
 
 The ESP's complete .ino file can be found [here](final-esp/final-esp.ino)
 
@@ -168,7 +172,7 @@ To keep things simple, our CSS is included in a ```style``` tag in index.html
 bundle.js is the result of using browserify to bundle our main.js and node modules. It is hosted on creative.colorado because the file size is a too large for the memory of the ESPs we purchased. Additionally, this makes debugging much simpler as updating the JavaScript for the lamp doesn't require the ESP's upload process.
 
 ## ESP's [main.js](web/main.js)
-main.js is where the magic happens. First, you'll want to make sure you have node and [npm](https://www.npmjs.com) installed. I'm working on macOS and prefer the hyper terminal and fish shell for work like this as they provide great customization and autocomplete features, but you can accomplish this in whichever environment pleases you. 
+main.js is where the magic happens. First, you'll want to make sure you have node and [npm](https://www.npmjs.com) installed. I'm working on macOS and prefer the [hyper terminal](https://hyper.is) and [fish shell](https://fishshell.com) for work like this as they provide great customization and autocomplete features, but you can accomplish this in whichever environment pleases you. 
 ```fish
     node -v
     npm -v
@@ -202,14 +206,14 @@ Additionally, the following packages need to be installed and then required in m
 ```fish
     npm i three-obj-mtl-loader
 ```
-looking at this package's index.js (node_modules/three-obj-mtl-loader/index.js) file shows the exports at the very bottom. it exports an object with an ```MTLLoader``` property and an ```OBJLoader``` property.
+Looking at this package's index.js (node_modules/three-obj-mtl-loader/index.js) file shows the exports at the very bottom. It exports an object with an ```MTLLoader``` property and an ```OBJLoader``` property.
 ```js
     const loaders = require("three-obj-mtl-loader");
     const MTLLoader = loaders.MTLLoader;
     const OBJLoader = loaders.OBJLoader;
 ```
 ### ```getToken()``` | [main.js](web/main.js)
-After requiring all of these packages, I define a ```getToken()```  function to get an OAuth2 access token to authenticate our interactions with the IoT cloud. This is detailed in the [Cloud API's npm documentation](https://www.npmjs.com/package/@arduino/arduino-iot-client); however, I struggled with a CORS Access Control error for a while. I found [this medium article](https://medium.com/@dtkatz/3-ways-to-fix-the-cors-error-and-how-access-control-allow-origin-works-d97d55946d9) that provides a proxy, cors-anywhere.herokuapp.com, I can send the requests to and get a response without any CORS errors. For the sake of convenience and time, I'm going to continue with this proxy; however, when moving on to another iteration of this product, I would want to serve this proxy from my server instead as the cors-anywhere app sets a rate limit.
+After requiring all of these packages, I define a ```getToken()```  function to get an OAuth2 access token to authenticate our interactions with the IoT cloud. This is detailed in the [Cloud API's npm Documentation](https://www.npmjs.com/package/@arduino/arduino-iot-client); however, I struggled with a CORS Access Control error for a while. I found [this Medium Article](https://medium.com/@dtkatz/3-ways-to-fix-the-cors-error-and-how-access-control-allow-origin-works-d97d55946d9) that provides a proxy, cors-anywhere.herokuapp.com, to receive requests and send a response without any CORS errors. For the sake of convenience and time, I'm going to continue with this proxy; however, when moving on to another iteration of this product, I would want to serve this proxy from my server instead to avoid the cors-anywhere's rate limit.
 
 ```js
 const getToken = async () => {
@@ -235,7 +239,7 @@ const getToken = async () => {
 ```
 
 ### ```getColor()``` | [main.js](web/main.js)
-This function is called in a ```getColor()``` function before getting the IoT cloud's color variable value. The process required for this is detailed in the [Cloud API's documentation](https://www.arduino.cc/reference/en/iot/api/#api-PropertiesV2-propertiesV2Show). This function will use a few global variables:
+This function is called in a ```getColor()``` function. before getting the IoT cloud's color variable value. The process required for this is detailed in the [Cloud API's documentation](https://www.arduino.cc/reference/en/iot/api/#api-PropertiesV2-propertiesV2Show). This function will use a few global variables:
 
 ```js
     let threeStarted = false;
@@ -287,6 +291,17 @@ Next, the function uses the ```threeStarted``` variable to initialize the three 
     }
 ```
 
+After calling ```getColor();``` on start up, this function runs on a 10 second interval, relying on the ```threeStarted``` boolean, and a ```waiting``` boolean that tells if we are waiting on a successful update from the browser to the IoT cloud. This ensures we don't overwrite the color locally until we're sure it is stored in the cloud. 
+
+```js
+    let syncCloudColor = setInterval(() => {
+    if (!waiting && threeStarted) {
+        getColor();
+    }
+}, 10000);
+```
+### ```tellESP()``` | [main.js](web/main.js)
+
 The ```tellESP()``` function is how we ensure the local lamp's color always stays current, whether changed locally or remotely. It receives the color as an object with 3 properties: r, g, and b. It then formats this object into a URL path with three parameters and opens an [XML HTTP GET](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/open) request at this URL path. This sends the color to the ESP, where it is then printed to the Serial.
 
 ```js
@@ -297,8 +312,8 @@ The ```tellESP()``` function is how we ensure the local lamp's color always stay
         xhr.send();
     }
 ```
-
-Sending an updated color to the IoT Cloud begins when a user selects a color with the color input's picker. I use an event listener to know when this happens and trigger the update. This immediately updates the lights and material in the three scene, and calls ```updateLight()``` to begin the update process. ```updateLight()``` begins by taking the HEX value of the color picker and converting it to RGB. I found a [function for this](https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb) along with the previous function I used to convert the other way. It then sets the ```waiting``` varaiable to ```true```
+### ```colorPicker.addEventListener()``` | [main.js](web/main.js)
+Sending an updated color to the IoT Cloud begins when a user selects a color with the color input's picker. I use an event listener to know when this happens and trigger the update. This immediately updates the lights and material in the three scene, and calls ```updateLight()``` to begin the update process. ```updateLight()``` begins by taking the HEX value of the color picker and converting it to RGB. I found a [function for this](https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb) along with the previous function I used to convert the other way.
 
 ```js
     const colorPicker = document.getElementById("colorPicker");
@@ -308,5 +323,146 @@ Sending an updated color to the IoT Cloud begins when a user selects a color wit
         ambientLight.color = userColor;
         cylinder.material.color = userColor;
         updateLight(colorPicker.value);
+    });
+```
+
+### ```updateLight()``` | [main.js](web/main.js)
+After the ```updateLight()``` has converted the HEX value to RGB, the ```waiting``` varaiable switches to ```true```, and ```tellESP``` is called with the RGB object. The ```syncCloudColor``` interval's is cleared, and an ```updateColor()``` function is called with an RGB string from the RGB object. After ```updateColor()``` is finished, the interval is reset to call ```getColor()``` every 10 seconds.
+
+```js
+    let updateLight = (color) => {
+        let rgb = toRGB(color);
+        rgbString = rgb.r + "," + rgb.g + "," + rgb.b;
+        waiting = true;
+        tellESP(rgb);
+        clearInterval(syncCloudColor);
+        updateColor(rgbString).then(() => {
+            syncCloudColor = setInterval(() => {
+                if (!waiting && threeStarted) {
+                    getColor();
+                }
+            }, 10000);
+        });
+    }
+```
+
+### ```updateColor()``` | [main.js](web/main.js)
+The ```updateColor()``` function sends an RGB color as a comma separated string to the IoT Cloud's color variable. Using the API's [propertiesV2Publish()](https://www.arduino.cc/reference/en/iot/api/#api-PropertiesV2-propertiesV2Publish) method. Once the color is sent, the ```waiting``` boolean is set back to ```false```
+
+```js
+    const updateColor = async (thisColor) => {
+        let propertyVal = {
+            "device_id": deviceID,
+            "value": thisColor
+        }
+        api.propertiesV2Publish(thingID, propertyID, propertyVal).then(() => {
+            // once the update is done, we're no longer waiting
+            waiting = false;
+            console.log("Color updated");
+        }, error => {
+            console.log("Failed to update color: " + error);
+        });
+    }
+```
+
+### ```initThree()``` | [main.js](web/main.js)
+
+The visual content of the web page is controlled by a [Three.js scene](https://threejs.org). The scene creation is wrapped in the ```initThree()``` function to ensure it isn't initialized until the current color is loaded. To begin, the ```scene``` is defined as a ```new THREE.Scene()```. Point and ambient lights are added to light the scene with the current color. The point light acts like a lightbulb and is set to be positioned above the lamp's position to create the best visual effect. The max distance is set at 200 more than the y position of the light to make it emit light just a little past the lamp, and the deacy is set to 2 to provide physically correct lighting. The ambient serves to provide, as its name suggests, ambient light to the scene, lighting all elements equally.
+
+```js
+    let initThree = () => {
+        scene = new THREE.Scene();
+
+        pointLight = new THREE.PointLight(userColor, 10, 1200, 2);
+        pointLight.position.set(0, 1000, 0);
+        pointLight.castShadow = true;
+        scene.add(pointLight);
+
+        ambientLight = new THREE.AmbientLight(userColor);
+        scene.add(ambientLight);
+```
+
+A perspective camera is used to display the scene in the browser, and the renderer is set up using the window's width and height, and the device's pixel ratio. It is then attached to the ```<section id="threeScene">``` HTML element in index.html
+
+```js
+        let w = window.innerWidth;
+        let h = window.innerHeight;
+
+        camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
+        camera.position.z = 5;
+
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(w, h);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setClearColor(0x777777, 1);
+        document.getElementById("threeScene").appendChild(renderer.domElement);
+```
+
+The lamp shade is the first object that is created. A mesh in the combination of a geometry and material, so this begins with a ```CylinderGeometry``` and the ```MeshBasicMaterial``` to create the cylinder's mesh. The Mesh Basic Material is used to keep the cylinder matte and non-reflective.
+
+```js
+        const geometry = new THREE.CylinderGeometry(1.2, 1.2, 3.5, 32, 4, false);
+        const material = new THREE.MeshBasicMaterial({ color: userColor, transparent: true, opacity: 0.7, });
+        cylinder = new THREE.Mesh(geometry, material);
+        scene.add(cylinder);
+```
+
+A plane is added behind the lamp with a Mesh Phong Material to act as a wall that reflects the scene's light.
+
+```js
+        const bgGeometry = new THREE.PlaneGeometry(100, 100);
+        const bgMaterial = new THREE.MeshPhongMaterial({ color: 0x777777 });
+        const bg = new THREE.Mesh(bgGeometry, bgMaterial);
+        bg.position.z = -10;
+        scene.add(bg);
+```
+
+Finally, the lamp base is added using the OBJ and MTL loaders from the three-obj-mtl-loader package. First, the two loaders are defined. Then the MTL file is loaded and used in the OBJ loader's ```setMaterials``` method to load the OBJ file. Then, I just had to scale it down to a quarter of it's size and rotate it to the correct position.
+
+```js
+        let base;
+        const loader = new OBJLoader();
+        const mLoader = new MTLLoader();
+        mLoader.load("lampBase.mtl", (mtl) => {
+            mtl.preload();
+            loader.setMaterials(mtl).load("lampBase.obj", (obj) => {
+                base = obj;
+                obj.scale.x = 0.25;
+                obj.scale.y = 0.25;
+                obj.scale.z = 0.25;
+                obj.rotateY(Math.PI);
+                obj.position.y = -1.8;
+                scene.add(obj);
+            });
+        }, undefined, error => { console.log(error) });
+```
+
+The ```initThree()``` function ends with an ```animate()``` loop where the base is rotated by .005 radians around it's y access on each iteration, the scene is then rendered to the page and ```animate()``` is called again in ```requestAnimationFrame()```
+
+```js
+        let animate = () => {
+            if (base) {
+                base.rotation.y += 0.005;
+            }
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+    } // closing initThree()
+```
+
+### ```window.addEventListener()``` | [main.js](web/main.js)
+
+The main.js file ends with a resize event listener to adjust the camera and renderer when the window is resized.
+
+```js
+    window.addEventListener("resize", () => {
+        if (threeStarted) {
+            w = window.innerWidth;
+            h = window.innerHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+        }
     });
 ```
