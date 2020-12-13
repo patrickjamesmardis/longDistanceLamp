@@ -54,7 +54,7 @@ Next, the functions for each client request are initialized
     void handleColor();
 ```
 ### ```setup()``` | [final-esp.ino](final-esp/final-esp.ino)
-In the ``` setup() ``` function, Serial communication begins with a speed of 115200 baud. The WiFi connection starts in station mode to serve on the local WiFi network. An mDNS hostname is started to use lamp.local to connect; however, this method isn't supported in all browsers, so the local IP address is printed to the Serial. ``` initProperties() ``` is provided by Arduino to initialize the properties from the thing properties header file. ```LittleFS.begin()``` gives access to the file system. The server is set up to handle requests related to the functions above:
+In the ``` setup() ``` function, Serial communication begins with a speed of 115200 baud. The WiFi connection starts in station mode to serve on the local WiFi network. An mDNS hostname is started to use lamp.local to connect; however, this method is not supported in all browsers, so the local IP address is printed to the Serial. ``` initProperties() ``` is provided by Arduino to initialize the properties from the thing properties header file. ```LittleFS.begin()``` gives access to the file system. The server is set up to handle requests related to the functions above:
 
 ```cpp
     server.on("/", handleRoot);
@@ -101,14 +101,15 @@ These functions are defined as follows, using LittleFS to get the ESP's file sys
     server.send(404, "text/plain", "404: Not Found");
     }
 ```
-The [MDN docs](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers) layout the use of HTTP headers. Without setting the cache control on the MTL and OBJ files, they reload every time the color is updated..
+The [MDN docs](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers) layout the use of HTTP headers. Without setting the cache control on the MTL and OBJ files, they reload every time the color is updated. 
+
 When the browser sends a request to set the color, ```onColorChange()``` is called to print the formatted color to the Serial.
 
 ### ```loop()``` | [final-esp.ino](final-esp/final-esp.ino)
 
-The ```loop()``` function uses the IoT cloud's update method to update the cloud variable. This is supposed to work to both read and write the value; however we were only seeing it work as a read of the cloud's value, as we saw an update when changing it on the IoT Dashboard, but we didn't see an update on the dashboard when updating it locally. Implementing their npm package and controlling the read and write processes with two separate functions, [```getColor()```](#getcolor--mainjs) and [```updateColor()```](#updatecolor--mainjs), in JS worked for keeping the variable in sync regardless of where it is (re)defined.
+The ```loop()``` function uses the IoT cloud's update method to update the cloud variable. This is supposed to work to both read and write the value; however, we were only seeing it work as a read of the cloud's value, as we saw an update when changing it on the IoT Dashboard, but we did not see an update on the dashboard when updating it locally. Implementing their npm package and controlling the read and write processes with two separate functions, [```getColor()```](#getcolor--mainjs) and [```updateColor()```](#updatecolor--mainjs), in JS, worked for keeping the variable in sync regardless of where it is (re)defined.
 
-The ESP's complete .ino file can be found [here](final-esp/final-esp.ino)
+The complete final-esp.ino file can be found [here](final-esp/final-esp.ino)
 
 ## ESP's [index.html](web/index.html)
 The web page for updating colors is defined in an HTML document with a section for a Three JS scene, a color input, and the local times in both time zones. It calls for the bundle.js file to produce the Three JS scene and connect to the IoT cloud.
@@ -168,11 +169,13 @@ To keep things simple, our CSS is included in a ```style``` tag in index.html
     }
 ```
 
+The complete index.html file can be found [here](web/index.html).
+
 ## ESP's [bundle.js](web/bundle.js)
 bundle.js is the result of using browserify to bundle our main.js and node modules. It is hosted on creative.colorado because the file size is a too large for the memory of the ESPs we purchased. Additionally, this makes debugging much simpler as updating the JavaScript for the lamp doesn't require the ESP's upload process.
 
 ## ESP's [main.js](web/main.js)
-main.js is where the magic happens. First, you'll want to make sure you have node and [npm](https://www.npmjs.com) installed. I'm working on macOS and prefer the [hyper terminal](https://hyper.is) and [fish shell](https://fishshell.com) for work like this as they provide great customization and autocomplete features, but you can accomplish this in whichever environment pleases you. 
+main.js is where the magic happens. First, you'll want to make sure you have node and [npm](https://www.npmjs.com) installed. I'm working on macOS and prefer the [hyper terminal](https://hyper.is) and [fish shell](https://fishshell.com) for work like this as they provide great customization and autocomplete features; however, you can accomplish this in whichever environment pleases you. 
 ```fish
     node -v
     npm -v
@@ -182,11 +185,11 @@ I've previously installed these, but if the above commands don't return anything
     brew install node
 ```
 ### Setting up npm | [main.js](web/main.js)
-The first step is to create a package.json file with the ```npm init``` command. Going through this set up is pretty straight forware, but I'm setting the entry point to main.js out of habit. The standard index.js is fine, or anything else you'd like, but you'll need to name your file accordingly.
+The first step is to create a package.json file with the ```npm init``` command. Going through this set up is pretty straight forward, but I'm setting the entry point to main.js out of habit. The standard index.js is fine, or anything else you'd like, but you'll need to name your file accordingly.
 
 Additionally, the following packages need to be installed and then required in main.js.
 
-[Arduino's IoT API Client ](https://www.npmjs.com/package/@arduino/arduino-iot-client) to connect to the IoT cloud and sync the color variable. This brings request-promise with it for retrieving an OAuth2 access token.
+[Arduino's IoT API Client ](https://www.npmjs.com/package/@arduino/arduino-iot-client) is used to connect to the IoT cloud and sync the color variable. This brings request-promise with it for retrieving an OAuth2 access token.
 ```fish
     npm i @arduino/arduino-iot-client
 ```
@@ -195,14 +198,14 @@ Additionally, the following packages need to be installed and then required in m
     const rp = require("request-promise");
 ```
 
-[three](https://www.npmjs.com/package/three) to render a 3D animation of the lamp
+[three](https://www.npmjs.com/package/three) is used to render a 3D animation of the lamp
 ```fish
     npm i three
 ```
 ```js
     const THREE = require("three");
 ```
-[three obj/mtl loader](https://www.npmjs.com/package/three-obj-mtl-loader) to load the .obj and .mtl files for the lamp's base
+[three obj/mtl loader](https://www.npmjs.com/package/three-obj-mtl-loader) gives three js loaders for .obj and .mtl files
 ```fish
     npm i three-obj-mtl-loader
 ```
@@ -213,7 +216,7 @@ Looking at this package's index.js (node_modules/three-obj-mtl-loader/index.js) 
     const OBJLoader = loaders.OBJLoader;
 ```
 ### ```getToken()``` | [main.js](web/main.js)
-After requiring all of these packages, I define a ```getToken()```  function to get an OAuth2 access token to authenticate our interactions with the IoT cloud. This is detailed in the [Cloud API's npm Documentation](https://www.npmjs.com/package/@arduino/arduino-iot-client); however, I struggled with a CORS Access Control error for a while. I found [this Medium Article](https://medium.com/@dtkatz/3-ways-to-fix-the-cors-error-and-how-access-control-allow-origin-works-d97d55946d9) that provides a proxy, cors-anywhere.herokuapp.com, to receive requests and send a response without any CORS errors. For the sake of convenience and time, I'm going to continue with this proxy; however, when moving on to another iteration of this product, I would want to serve this proxy from my server instead to avoid the cors-anywhere's rate limit.
+After requiring all of these packages, I define a ```getToken()```  function to get an OAuth2 access token to authenticate our IoT cloud interactions. This is detailed in the [Cloud API's npm Documentation](https://www.npmjs.com/package/@arduino/arduino-iot-client); however, I struggled with a CORS Access Control error for a while. I found [this Medium Article](https://medium.com/@dtkatz/3-ways-to-fix-the-cors-error-and-how-access-control-allow-origin-works-d97d55946d9) that provides a proxy, cors-anywhere.herokuapp.com, to receive requests and send a response without any CORS errors. For the sake of convenience and time, I'm going to continue with this proxy; however, when moving on to another iteration of this product, I would want to serve this proxy from my server instead to avoid the cors-anywhere's rate limit.
 
 ```js
 const getToken = async () => {
@@ -251,7 +254,7 @@ This function is called in a ```getColor()``` function. before getting the IoT c
     let lastWebColor = "";
 ```
 
-The device and thing IDs are available in the Arduino IoT Cloud account. The property ID is obtained with ```console.log(data)``` where data is the response from the [propertiesV2List method](https://www.arduino.cc/reference/en/iot/api/#api-PropertiesV2-propertiesV2List).
+The device and thing IDs are available in the Arduino IoT Cloud account. The property ID is obtained with ```console.log(data)```, where data is the response from the [propertiesV2List method](https://www.arduino.cc/reference/en/iot/api/#api-PropertiesV2-propertiesV2List).
 
 First, the ```getColor()``` function checks if the ```api``` variable is still null. If so, it requests an access token and defines an IoT ```PropertiesV2Api```. 
 
@@ -264,7 +267,7 @@ if (api == null) {
 }
 ```
 
-Next this ```api```'s ```propertiesV2Show``` method is used to "show" the property's value, in this case the value of the ```color``` variable. The ```api``` returns an object with a property ```last_value``` which holds the last value the IoT Cloud recorded. This value is formatted as an RGB string to define a ```new THREE.Color```. Again, I ran into the CORS error with this API method, but looking at the ApiClient.js file in node_modules/@arduino/arduino-iot-client/dist, there is a ```this.basePath``` variable storing the base URL. Prepending this URL with the cors-anywhere.herokuapp.com URL sovles the problem.
+Next, this ```api```'s ```propertiesV2Show``` method is used to "show" the property's value, in this case, the value of the ```color``` variable. The ```api``` returns an object with a property ```last_value```, which holds the last value the IoT Cloud recorded. This value is formatted as an RGB string to define a ```new THREE.Color```. Again, I ran into the CORS error with this API method, but looking at the ApiClient.js file in node_modules/@arduino/arduino-iot-client/dist, I found a ```this.basePath``` variable storing the base URL. Prepending this URL with the cors-anywhere.herokuapp.com URL solves the problem.
 ```js
 api.propertiesV2Show(thingID, propertyID).then(data => {
     let val = data.last_value;
@@ -291,7 +294,7 @@ Next, the function uses the ```threeStarted``` variable to initialize the three 
     }
 ```
 
-After calling ```getColor();``` on start up, this function runs on a 10 second interval, relying on the ```threeStarted``` boolean, and a ```waiting``` boolean that tells if we are waiting on a successful update from the browser to the IoT cloud. This ensures we don't overwrite the color locally until we're sure it is stored in the cloud. 
+After calling ```getColor();``` on startup, this function runs on a 10-second interval, relying on the ```threeStarted``` boolean and a ```waiting``` boolean that tells if we are waiting on a successful update from the browser to the IoT cloud. This ensures we don't overwrite the color locally until we're sure it is stored in the cloud. 
 
 ```js
     let syncCloudColor = setInterval(() => {
@@ -302,7 +305,7 @@ After calling ```getColor();``` on start up, this function runs on a 10 second i
 ```
 ### ```tellESP()``` | [main.js](web/main.js)
 
-The ```tellESP()``` function is how we ensure the local lamp's color always stays current, whether changed locally or remotely. It receives the color as an object with 3 properties: r, g, and b. It then formats this object into a URL path with three parameters and opens an [XML HTTP GET](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/open) request at this URL path. This sends the color to the ESP, where it is then printed to the Serial.
+The ```tellESP()``` function is how we ensure the local lamp's color always stays current, whether changed locally or remotely. It receives the color as an object with three properties: r, g, and b. It then formats this object into a URL path with three parameters and opens an [XML HTTP GET](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/open) request at this URL path. This sends the color to the ESP, where it is then printed to the Serial.
 
 ```js
     const tellESP = (rgbObj) => {
@@ -313,7 +316,7 @@ The ```tellESP()``` function is how we ensure the local lamp's color always stay
     }
 ```
 ### ```colorPicker.addEventListener()``` | [main.js](web/main.js)
-Sending an updated color to the IoT Cloud begins when a user selects a color with the color input's picker. I use an event listener to know when this happens and trigger the update. This immediately updates the lights and material in the three scene, and calls ```updateLight()``` to begin the update process. ```updateLight()``` begins by taking the HEX value of the color picker and converting it to RGB. I found a [function for this](https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb) along with the previous function I used to convert the other way.
+Sending an updated color to the IoT Cloud begins when a user selects a color with the color input's picker. I use an event listener to know when this happens and trigger the update. This immediately updates the lights and material in the three scene and calls ```updateLight()``` to begin the update process. ```updateLight()``` begins by taking the HEX value of the color picker and converting it to RGB. I found a [function for this](https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb) along with the previous function I used to convert the other way.
 
 ```js
     const colorPicker = document.getElementById("colorPicker");
@@ -327,7 +330,7 @@ Sending an updated color to the IoT Cloud begins when a user selects a color wit
 ```
 
 ### ```updateLight()``` | [main.js](web/main.js)
-After the ```updateLight()``` has converted the HEX value to RGB, the ```waiting``` varaiable switches to ```true```, and ```tellESP``` is called with the RGB object. The ```syncCloudColor``` interval's is cleared, and an ```updateColor()``` function is called with an RGB string from the RGB object. After ```updateColor()``` is finished, the interval is reset to call ```getColor()``` every 10 seconds.
+After the ```updateLight()``` has converted the HEX value to RGB, the ```waiting``` variable switches to ```true```, and ```tellESP``` is called with the RGB object. The ```syncCloudColor```'s interval is cleared, and an ```updateColor()``` function is called with an RGB string from the RGB object. After ```updateColor()``` is finished, the interval is reset to call ```getColor()``` every 10 seconds.
 
 ```js
     let updateLight = (color) => {
@@ -347,7 +350,7 @@ After the ```updateLight()``` has converted the HEX value to RGB, the ```waiting
 ```
 
 ### ```updateColor()``` | [main.js](web/main.js)
-The ```updateColor()``` function sends an RGB color as a comma separated string to the IoT Cloud's color variable. Using the API's [propertiesV2Publish()](https://www.arduino.cc/reference/en/iot/api/#api-PropertiesV2-propertiesV2Publish) method. Once the color is sent, the ```waiting``` boolean is set back to ```false```
+The ```updateColor()``` function sends an RGB color as a comma-separated string to the IoT Cloud's color variable. Using the API's [propertiesV2Publish()](https://www.arduino.cc/reference/en/iot/api/#api-PropertiesV2-propertiesV2Publish) method. Once the color is sent, the ```waiting``` boolean is set back to ```false```.
 
 ```js
     const updateColor = async (thisColor) => {
@@ -367,7 +370,7 @@ The ```updateColor()``` function sends an RGB color as a comma separated string 
 
 ### ```initThree()``` | [main.js](web/main.js)
 
-The visual content of the web page is controlled by a [Three.js scene](https://threejs.org). The scene creation is wrapped in the ```initThree()``` function to ensure it isn't initialized until the current color is loaded. To begin, the ```scene``` is defined as a ```new THREE.Scene()```. Point and ambient lights are added to light the scene with the current color. The point light acts like a lightbulb and is set to be positioned above the lamp's position to create the best visual effect. The max distance is set at 200 more than the y position of the light to make it emit light just a little past the lamp, and the deacy is set to 2 to provide physically correct lighting. The ambient serves to provide, as its name suggests, ambient light to the scene, lighting all elements equally.
+A [Three.js scene](https://threejs.org) controls the visual content of the web page. The scene creation is wrapped in the ```initThree()``` function to ensure it is not initialized until the current color is loaded. First, the ```scene``` is defined as a ```new THREE.Scene()```. Point and ambient lights are added to light the scene with the current color. The point light acts like a lightbulb and is positioned above the lamp's position to create the best visual effect. The max distance is set at 200 more than the ```y``` position to emit light just a little past the lamp, and the decay is set to 2 to provide physically correct lighting. The ambient serves to provide, as its name suggests, ambient light to the scene, lighting all elements equally.
 
 ```js
     let initThree = () => {
@@ -382,7 +385,7 @@ The visual content of the web page is controlled by a [Three.js scene](https://t
         scene.add(ambientLight);
 ```
 
-A perspective camera is used to display the scene in the browser, and the renderer is set up using the window's width and height, and the device's pixel ratio. It is then attached to the ```<section id="threeScene">``` HTML element in index.html
+A perspective camera is used to display the scene in the browser, and the renderer is set up using the window's width and height and the device's pixel ratio. It is then attached to the ```<section id="threeScene">``` HTML element in index.html
 
 ```js
         let w = window.innerWidth;
@@ -398,7 +401,7 @@ A perspective camera is used to display the scene in the browser, and the render
         document.getElementById("threeScene").appendChild(renderer.domElement);
 ```
 
-The lamp shade is the first object that is created. A mesh in the combination of a geometry and material, so this begins with a ```CylinderGeometry``` and the ```MeshBasicMaterial``` to create the cylinder's mesh. The Mesh Basic Material is used to keep the cylinder matte and non-reflective.
+The lampshade is the first object that is created. A mesh combines geometry and material, so this begins with a ```CylinderGeometry``` and the ```MeshBasicMaterial``` to create the cylinder's mesh. The Mesh Basic Material is used to keep the cylinder matte and non-reflective.
 
 ```js
         const geometry = new THREE.CylinderGeometry(1.2, 1.2, 3.5, 32, 4, false);
@@ -417,7 +420,7 @@ A plane is added behind the lamp with a Mesh Phong Material to act as a wall tha
         scene.add(bg);
 ```
 
-Finally, the lamp base is added using the OBJ and MTL loaders from the three-obj-mtl-loader package. First, the two loaders are defined. Then the MTL file is loaded and used in the OBJ loader's ```setMaterials``` method to load the OBJ file. Then, I just had to scale it down to a quarter of it's size and rotate it to the correct position.
+Finally, the lamp base is added using the OBJ and MTL loaders from the three-obj-mtl-loader package. First, the two loaders are defined. The MTL file is then loaded and used in the OBJ loader's ```setMaterials``` method to load the OBJ file. Then, I just had to scale it down to a quarter of its size and rotate it to the correct position.
 
 ```js
         let base;
@@ -437,7 +440,7 @@ Finally, the lamp base is added using the OBJ and MTL loaders from the three-obj
         }, undefined, error => { console.log(error) });
 ```
 
-The ```initThree()``` function ends with an ```animate()``` loop where the base is rotated by .005 radians around it's y access on each iteration, the scene is then rendered to the page and ```animate()``` is called again in ```requestAnimationFrame()```
+The ```initThree()``` function ends with an ```animate()``` loop where the base is rotated by .005 radians around its ```y``` access, the scene is then rendered to the page, and ```animate()``` is called again in ```requestAnimationFrame()```.
 
 ```js
         let animate = () => {
@@ -467,10 +470,81 @@ The main.js file ends with a resize event listener to adjust the camera and rend
     });
 ```
 
-## main.js > bundle.js
+The complete main.js file can be found [here](web/main.js).
+
+## [main.js](web/main.js) > [bundle.js](web/bundle.js)
 
 Now that main.js() is finished, I use [browserify](https://www.npmjs.com/package/browserify) to bundle the npm packages.
 
 ```fish
     browserify main.js > bundle.js
 ```
+
+## Arduino's [final-arduino.ino](final-arduino/final-arduino.ino)
+
+Moving to the Arduino's role in this project, I begin by including the ```SoftwareSerial``` and ```Adafruit_NeoPixel``` headers. Software serial allows the ESP and Arduino to communicate while keeping the Arduino's communication with the computer open. The Adafruit NeoPixel header is for the 12-LED Ring and can be omitted for the RGB LED.
+
+I then define integers for each pin used. I define pin 9 as the ledPin, but using the RGB LED requires pins 9, 10, and 11 for r, g, and b, respectively.
+
+A software serial variable is then defined on the RX and TX pins, and a neo pixel variable on the led pin.
+
+```cpp
+    #include <SoftwareSerial.h>
+    #include <Adafruit_NeoPixel.h>
+    int txPin = 2;
+    int rxPin = 3;
+    int echoPin = 5;
+    int trigPin = 6;
+    //int rPin = 9;
+    //int gPin = 10;
+    //int bPin = 11;
+    int ledPin = 9;
+    int ledCount = 12;
+    SoftwareSerial espArduino(rxPin, txPin);
+    Adafruit_NeoPixel ring(ledCount, ledPin, NEO_GRB + NEO_KHZ800);
+```
+
+### setup() | [final-arduino.ino](final-arduino/final-arduino.ino)
+The Arduino's ```setup()``` function defines the pin modes used, begins the serial communications, and starts the 12-LED Ring with no color.
+
+```cpp
+    pinMode(rxPin, INPUT);
+    pinMode(echoPin, INPUT);
+    pinMode(trigPin, OUTPUT);
+    pinMode(txPin, OUTPUT);
+    //  pinMode(rPin, OUTPUT);
+    //  pinMode(gPin, OUTPUT);
+    //  pinMode(bPin, OUTPUT);
+    pinMode(ledPin, OUTPUT);
+    Serial.begin(115200);
+    espArduino.begin(115200);
+    delay(1500);
+    ring.begin();
+    ring.show();
+```
+
+### ```loop()``` | [final-arduino.ino](final-arduino/final-arduino.ino)
+The ```loop()``` function uses global integers defined for r, g, and b, an ```unsigned long lastUpdate``` to store the ```millis()``` value when the color is updated, and a ```lightOn``` boolean to hold the light's status.
+
+This function begins with the HC-SR04 ```digitalWrite()``` functions described [here](https://create.arduino.cc/projecthub/abdularbi17/ultrasonic-sensor-hc-sr04-with-arduino-tutorial-327ff6). The distance is calculated by sending. The TRIG pin starts ```LOW```, then is set to ```HIGH``` for 10 microseconds and back to ```LOW``` until the next loop. The duration is then set to be the sound wave's travel time with ```pulseIn(echoPin, HIGH)```. Distance is calculated to be half the product of the duration and the speed of sound [(.034 centimeters per microsecond)](https://create.arduino.cc/projecthub/abdularbi17/ultrasonic-sensor-hc-sr04-with-arduino-tutorial-327ff6).
+
+```cpp
+    int dur, dist;
+    digitalWrite(trigPin, LOW);
+    delayMicroseconds(2);
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+    dur = pulseIn(echoPin, HIGH);
+    dist = (dur * .0343) / 2;
+```
+
+Next, if the distance from the sensor is less than 30 centimeters, the color is set using ```showColor()```, the ```lastUpdate``` variable is set to the value returned from ```millis()```, and the ```lightOn``` variable is set to true.
+
+If the distance is not less than 30 centimeters, the light is currently on, and the time since the last update is more than 30 seconds, the light is set turned off with ```showColor(0, 0, 0)```, and ```lightOn``` is set to ```false```. 
+
+The ```showColor()``` function sets the color of the light to the given R, G, and B integers. For the 12-LED Ring, the NeoPixel's ```setPixelColor()``` method is used by looping through each LED. The RGB LED uses ```analogWrite``` for the three R, G, and B pins.
+
+After this calculation, the ```loop()``` function verifies that communication with the ESP is available and reads the software serial for an RGB string. It splits this string using the ```indexOf(',')``` and ```substring()``` methods. Finally, showColor() updates the light, and the ```lightOn``` and ```lastUpdate``` variables are updated.
+
+The complete final-arduino.ino file can be found [here](final-arduino/final-arduino.ino)
