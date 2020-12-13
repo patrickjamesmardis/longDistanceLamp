@@ -25,7 +25,7 @@ Each lamp uses an [HC-SR04 Ultrasonic Distance Sensor](https://www.sparkfun.com/
 - [Three OBJ and MTL loaders](https://www.npmjs.com/package/three-obj-mtl-loader)
 - [require-promise](https://www.npmjs.com/package/require-promise)
 - [browserify](https://www.npmjs.com/package/browserify)
-# Putting it together
+# The Circuit
 
 <img alt="Breadboard schematic with LED Ring" src="documentationAssets/finalObject_neoPixel_bb.jpg" width="50%"><img alt="Breadboard schematic with RGB LED" src="documentationAssets/finalObject_bb.jpg" width="50%">
 
@@ -548,3 +548,15 @@ The ```showColor()``` function sets the color of the light to the given R, G, an
 After this calculation, the ```loop()``` function verifies that communication with the ESP is available and reads the software serial for an RGB string. It splits this string using the ```indexOf(',')``` and ```substring()``` methods. Finally, showColor() updates the light, and the ```lightOn``` and ```lastUpdate``` variables are updated.
 
 The complete final-arduino.ino file can be found [here](final-arduino/final-arduino.ino)
+
+# Putting it together
+Hunter worked on the developed the physical design in [Rhino](http://rhino3d.com) with the motion sensor in mind. The base he created has an opening diameter perfect for fitting a sheet of A4 paper rolled into a cylinder. This paper was cut in a way similar to that of making paper snowflakes, but would be laser cut if they were to be produced in the future. Due to COVID, we were both away from CU's 3D printers, but I was able to work with an engineer at my dad's [company](https://www.borla.com) to print the bases and ship one to Hunter. The bases were printed with ABS material, sanded, and polished with acetone vapor.
+
+For documentation purposes, I rendered these in [Adobe Dimension](https://www.adobe.com/products/dimension.html).
+
+<img alt="Lamp Base View 1" src="documentationAssets/lamp-View1.png" width="50%"><img alt="Lamp Base View 2" src="documentationAssets/lamp-View2.png" width="50%">
+<img alt="Lamp Base View 3" src="documentationAssets/lamp-View3.png" width="50%"><img alt="Lamp Base View 4" src="documentationAssets/lamp3d.png" width="50%">
+
+<img alt="Printed Base View 1" src="documentationAssets/base1.jpg" width="33.3%"><img alt="Printed Base View 2" src="documentationAssets/base2.jpg" width="33.3%"><img alt="Printed Base View 3" src="documentationAssets/base3.jpg" width="33.3%">
+
+<img alt="Finished Lamp 1: Blue" src="documentationAssets/lamp1.jpg" width="50%"><img alt="Finished Lamp 1: Red" src="documentationAssets/lamp2.jpg" width="50%">
