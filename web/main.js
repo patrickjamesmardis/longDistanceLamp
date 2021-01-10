@@ -1,7 +1,7 @@
 const IotApi = require("@arduino/arduino-iot-client");
 const rp = require("request-promise");
 const THREE = require("three");
-const loaders = requre("three-obj-mtl-loader");
+const loaders = require("three-obj-mtl-loader");
 const MTLLoader = loaders.MTLLoader;
 const OBJLoader = loaders.OBJLoader;
 
