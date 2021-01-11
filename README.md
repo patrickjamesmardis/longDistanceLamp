@@ -550,7 +550,7 @@ After this calculation, the ```loop()``` function verifies that communication wi
 The complete final-arduino.ino file can be found [here](final-arduino/final-arduino.ino)
 
 # Putting it together
-Hunter worked on the developed the physical design in [Rhino](http://rhino3d.com) with the motion sensor in mind. The base he created has an opening diameter perfect for fitting a sheet of A4 paper rolled into a cylinder. This paper was cut in a way similar to that of making paper snowflakes, but would be laser cut if they were to be produced in the future. Due to COVID, we were both away from CU's 3D printers, but I was able to work with an engineer at my dad's [company](https://www.borla.com) to print the bases and ship one to Hunter. The bases were printed with ABS material, sanded, and polished with acetone vapor.
+Hunter developed the physical design in [Rhino](http://rhino3d.com) with the motion sensor in mind. The base he created has an opening diameter perfect for fitting a sheet of A4 paper rolled into a cylinder. This paper was cut in a way similar to that of making paper snowflakes, but would be laser cut if they were to be produced in the future. Due to COVID, we were both away from CU's 3D printers, but I was able to work with an engineer at my dad's [company](https://www.borla.com) to print the bases and ship one to Hunter. The bases were printed with ABS material, sanded, and polished with acetone vapor.
 
 For documentation purposes, I rendered these in [Adobe Dimension](https://www.adobe.com/products/dimension.html).
 
